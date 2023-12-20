@@ -4,6 +4,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:obs_teleport_mobile/obs_teleport/announce_teleport_peer.dart';
 import 'package:obs_teleport_mobile/utils/logger.dart';
+import 'package:obs_teleport_mobile/widgets/peer_info_form.dart';
 
 class TeleportInterfaceScreen extends StatefulWidget {
   const TeleportInterfaceScreen({Key? key}) : super(key: key);
@@ -38,6 +39,7 @@ class _TeleportInterfaceScreenState extends State<TeleportInterfaceScreen> {
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             _buildHeader(context),
+            _buildPeerInfoForm(),
           ],
         ),
       ),
@@ -108,5 +110,9 @@ class _TeleportInterfaceScreenState extends State<TeleportInterfaceScreen> {
 
   Future<void> _stopAnnouncer() async {
     await announcer.stopAnnouncer();
+  }
+
+  Widget _buildPeerInfoForm() {
+    return const PeerInfoForm();
   }
 }
