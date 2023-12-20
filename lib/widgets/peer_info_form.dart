@@ -1,8 +1,10 @@
+// ignore_for_file: library_private_types_in_public_api
+
 import 'package:flutter/material.dart';
 import 'package:obs_teleport_mobile/utils/logger.dart';
 
 class PeerInfoForm extends StatefulWidget {
-  const PeerInfoForm({Key? key}) : super(key: key);
+  const PeerInfoForm({super.key});
 
   @override
   _PeerInfoFormState createState() => _PeerInfoFormState();

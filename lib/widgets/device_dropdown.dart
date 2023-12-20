@@ -1,3 +1,5 @@
+// File: lib/widgets/device_dropdown.dart
+
 // ignore_for_file: library_private_types_in_public_api
 
 import 'package:flutter/material.dart';
@@ -5,14 +7,14 @@ import 'package:flutter/material.dart';
 class DeviceDropdown extends StatefulWidget {
   final String labelText;
   final List<String> deviceList;
-  final Function(String) onSelected;
+  final ValueChanged<int> onSelected; // Updated to accept an int
 
   const DeviceDropdown({
     required this.labelText,
     required this.deviceList,
     required this.onSelected,
-    Key? key,
-  }) : super(key: key);
+    super.key,
+  });
 
   @override
   _DeviceDropdownState createState() => _DeviceDropdownState();
@@ -39,7 +41,8 @@ class _DeviceDropdownState extends State<DeviceDropdown> {
         setState(() {
           dropdownValue = newValue!;
         });
-        widget.onSelected(newValue!);
+        int selectedIndex = widget.deviceList.indexOf(newValue!);
+        widget.onSelected(selectedIndex);
       },
       items: widget.deviceList.map<DropdownMenuItem<String>>((String value) {
         return DropdownMenuItem<String>(

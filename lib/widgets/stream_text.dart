@@ -8,7 +8,7 @@ import 'package:obs_teleport_mobile/utils/logger.dart';
 class StreamText extends StatefulWidget {
   final Stream<String> textStream;
 
-  const StreamText({Key? key, required this.textStream}) : super(key: key);
+  const StreamText({super.key, required this.textStream});
 
   @override
   _StreamTextState createState() => _StreamTextState();
