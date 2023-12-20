@@ -54,15 +54,17 @@ class _MonitorScreenState extends State<MonitorScreen> {
       return Container();
     }
 
-    // stream of image sequence
-    controller.startVideoRecording(onAvailable: (image) {
-      print(image.format.raw);
-      print(image.format);
-      print(image.format.group.name);
-    });
+    // // stream of image sequence
+    // controller.startVideoRecording(onAvailable: (image) {
+    //   print(image.format.raw);
+    //   print(image.format);
+    //   print(image.format.group.name);
+    // });
 
     return Scaffold(
-      body: CameraPreview(controller),
+      body: SafeArea(
+        child: CameraPreview(controller),
+      ),
     );
   }
 }
