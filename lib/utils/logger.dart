@@ -1,6 +1,8 @@
 import 'dart:async';
 
-class Console {
+import 'package:flutter/foundation.dart';
+
+class Logger {
   static final StreamController<String> _logStreamController =
       StreamController.broadcast();
 
@@ -33,5 +35,11 @@ class Console {
   static void _log(String level, String message) {
     final String logMessage = "[$level]: $message";
     _logStreamController.add(logMessage);
+    assert(() {
+      if (kDebugMode) {
+        print(logMessage);
+      }
+      return true;
+    }());
   }
 }

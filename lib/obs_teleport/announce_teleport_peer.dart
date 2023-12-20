@@ -2,7 +2,7 @@ import 'dart:io';
 import 'dart:math';
 import 'package:obs_teleport_mobile/global/types.dart';
 import 'package:obs_teleport_mobile/ssdp/ssdp_announcer.dart';
-import 'package:obs_teleport_mobile/stream/console.dart';
+import 'package:obs_teleport_mobile/utils/logger.dart';
 
 class AnnounceTeleportPeer {
   late Announcer announcer;
@@ -48,7 +48,7 @@ class AnnounceTeleportPeer {
         await announcer.startAnnouncer();
         break; // If startAnnouncer succeeds, break the loop
       } catch (e) {
-        Console.error(
+        Logger.error(
             'Error starting SSDP announcer: $e, maybe port is taken, Changing port...');
         port = _randomPort(); // Generate a new port
         _setAnnouncer(); // Set the announcer with the new port

@@ -3,8 +3,7 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:obs_teleport_mobile/obs_teleport/announce_teleport_peer.dart';
-import 'package:obs_teleport_mobile/stream/console.dart';
-import '../widgets/stream_text.dart';
+import 'package:obs_teleport_mobile/utils/logger.dart';
 
 class TeleportInterfaceScreen extends StatefulWidget {
   const TeleportInterfaceScreen({Key? key}) : super(key: key);
@@ -16,7 +15,6 @@ class TeleportInterfaceScreen extends StatefulWidget {
 
 class _TeleportInterfaceScreenState extends State<TeleportInterfaceScreen> {
   final TextEditingController _textEditingController = TextEditingController();
-  late final Stream<String> _logStream;
   late AnnounceTeleportPeer announcer;
   bool isBroadcasting = false; // Move the isBroadcasting variable here
 
@@ -24,7 +22,6 @@ class _TeleportInterfaceScreenState extends State<TeleportInterfaceScreen> {
   void initState() {
     super.initState();
     _initAnnouncer();
-    _initLogStream();
   }
 
   @override
@@ -41,11 +38,9 @@ class _TeleportInterfaceScreenState extends State<TeleportInterfaceScreen> {
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             _buildHeader(context),
-            _buildConsole(),
           ],
         ),
       ),
-      floatingActionButton: _buildStopButton(),
     );
   }
 
@@ -53,14 +48,9 @@ class _TeleportInterfaceScreenState extends State<TeleportInterfaceScreen> {
     announcer = AnnounceTeleportPeer(name: 'OBS teleport mobile', quality: 90);
   }
 
-  void _initLogStream() {
-    _logStream = Console.logStream;
-    Console.info('Started terminal');
-  }
-
   void _disposeResources() {
     _textEditingController.dispose();
-    Console.close();
+    Logger.close();
   }
 
   Widget _buildHeader(BuildContext context) {
@@ -109,22 +99,6 @@ class _TeleportInterfaceScreenState extends State<TeleportInterfaceScreen> {
           }
         });
       },
-    );
-  }
-
-  Widget _buildConsole() {
-    return Expanded(
-      child: StreamText(
-        textStream: _logStream,
-      ),
-    );
-  }
-
-  Widget _buildStopButton() {
-    return FloatingActionButton(
-      onPressed: _stopAnnouncer,
-      tooltip: 'Stop Announcer',
-      child: const Icon(Icons.stop_circle),
     );
   }
 

@@ -5,7 +5,7 @@ import 'dart:typed_data';
 
 import 'package:obs_teleport_mobile/global/types.dart';
 import 'package:obs_teleport_mobile/ssdp/ssdp_config.dart';
-import 'package:obs_teleport_mobile/stream/console.dart';
+import 'package:obs_teleport_mobile/utils/logger.dart';
 
 // custom implementation of SSD Protocol
 class Announcer {
@@ -18,28 +18,28 @@ class Announcer {
 
   Future<void> startAnnouncer() async {
     try {
-      Console.log('Starting SSDP announcer...');
+      Logger.log('Starting SSDP announcer...');
       _udpSocket = await _createAndConfigureSocket();
-      Console.log('UDP socket created and configured');
+      Logger.log('UDP socket created and configured');
       _joinMulticastGroup();
-      Console.log('Joined multicast group');
+      Logger.log('Joined multicast group');
       var payloadBytes = _getPayloadBytes();
       _startTimer(payloadBytes);
-      Console.log('Timer started');
+      Logger.log('Timer started');
     } catch (e) {
-      Console.log('Error starting SSDP announcer: $e');
+      Logger.log('Error starting SSDP announcer: $e');
       rethrow;
     }
   }
 
   Future<void> stopAnnouncer() async {
     try {
-      Console.log('Stopping SSDP announcer...');
+      Logger.log('Stopping SSDP announcer...');
       _timer?.cancel();
       _udpSocket?.close();
-      Console.log('SSDP announcer stopped');
+      Logger.log('SSDP announcer stopped');
     } catch (e) {
-      Console.log('Error stopping SSDP announcer: $e');
+      Logger.log('Error stopping SSDP announcer: $e');
       rethrow;
     }
   }
@@ -53,7 +53,7 @@ class Announcer {
       socket.broadcastEnabled = true;
       return socket;
     } catch (e) {
-      Console.log('Error creating and configuring UDP socket: $e');
+      Logger.log('Error creating and configuring UDP socket: $e');
       rethrow;
     }
   }
@@ -77,11 +77,11 @@ class Announcer {
           SsdpConfig.multicast.port,
         );
 
-        Console.log(
+        Logger.log(
             'Sent SSDP announcement with payload: ${utf8.decode(payloadBytes)}');
       });
     } catch (e) {
-      Console.log('Error starting timer: $e');
+      Logger.log('Error starting timer: $e');
       rethrow;
     }
   }

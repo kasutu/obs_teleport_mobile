@@ -2,7 +2,7 @@ import 'dart:async';
 import 'dart:io';
 import 'dart:convert';
 import 'package:obs_teleport_mobile/ssdp/ssdp_config.dart';
-import 'package:obs_teleport_mobile/stream/console.dart';
+import 'package:obs_teleport_mobile/utils/logger.dart';
 
 class Discoverer {
   RawDatagramSocket? _udpSocket;
@@ -11,13 +11,13 @@ class Discoverer {
   Stream<Map<String, dynamic>> get peers => _controller.stream;
 
   Future<void> startDiscoverer() async {
-    Console.log('Starting SSDP discoverer...');
+    Logger.log('Starting SSDP discoverer...');
     _udpSocket = await _createAndConfigureSocket();
-    Console.log('UDP socket created and configured');
+    Logger.log('UDP socket created and configured');
     _joinMulticastGroup();
-    Console.log('Joined multicast group');
+    Logger.log('Joined multicast group');
     _startListening();
-    Console.log('Discoverer started');
+    Logger.log('Discoverer started');
   }
 
   // Extracted methods for better readability and separation of concerns
@@ -45,9 +45,9 @@ class Discoverer {
   }
 
   Future<void> stopDiscoverer() async {
-    Console.log('Stopping SSDP discoverer...');
+    Logger.log('Stopping SSDP discoverer...');
     _udpSocket?.close();
     await _controller.close();
-    Console.log('SSDP discoverer stopped');
+    Logger.log('SSDP discoverer stopped');
   }
 }

@@ -3,7 +3,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
-import 'package:obs_teleport_mobile/stream/console.dart';
+import 'package:obs_teleport_mobile/utils/logger.dart';
 
 class StreamText extends StatefulWidget {
   final Stream<String> textStream;
@@ -51,7 +51,7 @@ class _StreamTextState extends State<StreamText> {
             curve: Curves.easeOut,
           );
         } catch (e) {
-          Console.log('Error: $e');
+          Logger.log('Error: $e');
           _controller.animateTo(
             0.0,
             duration: const Duration(milliseconds: 150),
