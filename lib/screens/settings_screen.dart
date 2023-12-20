@@ -6,15 +6,14 @@ import 'package:obs_teleport_mobile/obs_teleport/announce_teleport_peer.dart';
 import 'package:obs_teleport_mobile/utils/logger.dart';
 import 'package:obs_teleport_mobile/widgets/peer_info_form.dart';
 
-class TeleportInterfaceScreen extends StatefulWidget {
-  const TeleportInterfaceScreen({Key? key}) : super(key: key);
+class SettingsScreen extends StatefulWidget {
+  const SettingsScreen({Key? key}) : super(key: key);
 
   @override
-  _TeleportInterfaceScreenState createState() =>
-      _TeleportInterfaceScreenState();
+  _SettingsScreenState createState() => _SettingsScreenState();
 }
 
-class _TeleportInterfaceScreenState extends State<TeleportInterfaceScreen> {
+class _SettingsScreenState extends State<SettingsScreen> {
   final TextEditingController _textEditingController = TextEditingController();
   late AnnounceTeleportPeer announcer;
   bool isBroadcasting = false; // Move the isBroadcasting variable here
