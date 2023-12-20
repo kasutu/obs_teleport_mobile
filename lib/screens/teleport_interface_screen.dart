@@ -2,23 +2,23 @@
 
 import 'dart:async';
 import 'package:flutter/material.dart';
-import 'package:obs_teleport_mobile/global/types.dart';
 import 'package:obs_teleport_mobile/obs_teleport/announce_teleport_peer.dart';
-import 'package:obs_teleport_mobile/ssdp/ssdp_announcer.dart';
 import 'package:obs_teleport_mobile/stream/console.dart';
 import '../widgets/stream_text.dart';
 
-class TerminalScreen extends StatefulWidget {
-  const TerminalScreen({Key? key}) : super(key: key);
+class TeleportInterfaceScreen extends StatefulWidget {
+  const TeleportInterfaceScreen({Key? key}) : super(key: key);
 
   @override
-  _TerminalScreenState createState() => _TerminalScreenState();
+  _TeleportInterfaceScreenState createState() =>
+      _TeleportInterfaceScreenState();
 }
 
-class _TerminalScreenState extends State<TerminalScreen> {
+class _TeleportInterfaceScreenState extends State<TeleportInterfaceScreen> {
   final TextEditingController _textEditingController = TextEditingController();
   late final Stream<String> _logStream;
   late AnnounceTeleportPeer announcer;
+  bool isBroadcasting = false; // Move the isBroadcasting variable here
 
   @override
   void initState() {
@@ -40,7 +40,7 @@ class _TerminalScreenState extends State<TerminalScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            _buildHeader(),
+            _buildHeader(context),
             _buildConsole(),
           ],
         ),
@@ -63,42 +63,52 @@ class _TerminalScreenState extends State<TerminalScreen> {
     Console.close();
   }
 
-  Widget _buildHeader() {
-    return SizedBox(
-      height: kToolbarHeight, // Use the same height as AppBar
+  Widget _buildHeader(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(
+        horizontal: 12,
+        vertical: 5,
+      ),
+      color: Theme.of(context).colorScheme.background,
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          const Padding(
-            padding: EdgeInsets.only(left: 15),
-            child: Text(
-              'OBS Teleport Mobile',
-              style: TextStyle(
-                fontSize: 20.0,
-                color: Colors.black,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
+          Text(
+            'OBS Teleport',
+            style: Theme.of(context).textTheme.titleLarge!.copyWith(
+                  color: Theme.of(context).colorScheme.primary,
+                ),
           ),
-          _buildHeaderButtons(),
+          _buildHeaderButtons(context),
         ],
       ),
     );
   }
 
-  Widget _buildHeaderButtons() {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      children: [
-        IconButton(
-          icon: const Icon(Icons.play_arrow),
-          onPressed: _startAnnouncer,
-        ),
-        IconButton(
-          icon: const Icon(Icons.delete),
-          onPressed: _clearConsole,
-        ),
-      ],
+  Widget _buildHeaderButtons(BuildContext context) {
+    final MaterialStateProperty<Icon?> thumbIcon =
+        MaterialStateProperty.resolveWith<Icon?>(
+      (Set<MaterialState> states) {
+        if (states.contains(MaterialState.selected)) {
+          return const Icon(Icons.play_arrow); // Icon for broadcasting state
+        }
+        return const Icon(Icons.stop); // Icon for stopped state
+      },
+    );
+
+    return Switch(
+      thumbIcon: thumbIcon,
+      value: isBroadcasting,
+      onChanged: (bool value) {
+        setState(() {
+          isBroadcasting = value;
+          if (isBroadcasting) {
+            _startAnnouncer();
+          } else {
+            _stopAnnouncer();
+          }
+        });
+      },
     );
   }
 
@@ -124,11 +134,5 @@ class _TerminalScreenState extends State<TerminalScreen> {
 
   Future<void> _stopAnnouncer() async {
     await announcer.stopAnnouncer();
-  }
-
-  void _clearConsole() {
-    setState(() {
-      Console.clear();
-    });
   }
 }
