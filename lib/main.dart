@@ -103,19 +103,31 @@ class _MyHomePageState extends State<MyHomePage> {
     return BottomNavigationBar(
       items: const <BottomNavigationBarItem>[
         BottomNavigationBarItem(
-          icon: Icon(Icons.monitor),
+          icon: Icon(
+            Icons.monitor,
+            color: Colors.white70,
+          ),
           label: 'Monitor',
         ),
         BottomNavigationBarItem(
-          icon: Icon(Icons.input),
+          icon: Icon(
+            Icons.input,
+            color: Colors.white70,
+          ),
           label: 'Sources',
         ),
         BottomNavigationBarItem(
-          icon: Icon(Icons.settings),
+          icon: Icon(
+            Icons.settings,
+            color: Colors.white70,
+          ),
           label: 'Settings',
         ),
         BottomNavigationBarItem(
-          icon: Icon(Icons.terminal),
+          icon: Icon(
+            Icons.terminal,
+            color: Colors.white70,
+          ),
           label: 'Logs',
         ),
       ],

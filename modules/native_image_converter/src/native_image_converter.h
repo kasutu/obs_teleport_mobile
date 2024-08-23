@@ -1,6 +1,7 @@
+#ifndef NATIVE_IMAGE_CONVERTER_H_
+#define NATIVE_IMAGE_CONVERTER_H_
+
 #include <stdint.h>
-#include <stdio.h>
-#include <stdlib.h>
 
 #if _WIN32
 #include <windows.h>
@@ -15,16 +16,11 @@
 #define FFI_PLUGIN_EXPORT
 #endif
 
-// A very short-lived native function.
+// A function for YUV420 to RGBA conversion.
 //
-// For very short-lived functions, it is fine to call them on the main isolate.
-// They will block the Dart execution while running the native function, so
-// only do this for native functions which are guaranteed to be short-lived.
-FFI_PLUGIN_EXPORT intptr_t sum(intptr_t a, intptr_t b);
+// This function converts YUV420 formatted image data to RGBA format.
+// It takes pointers to the YUV420 data and an allocated RGBA buffer,
+// along with the image width and height.
+FFI_PLUGIN_EXPORT void yuv420_to_rgba(uint8_t* yuvData, uint8_t* rgbaData, int width, int height);
 
-// A longer lived native function, which occupies the thread calling it.
-//
-// Do not call these kind of native functions in the main isolate. They will
-// block Dart execution. This will cause dropped frames in Flutter applications.
-// Instead, call these native functions on a separate isolate.
-FFI_PLUGIN_EXPORT intptr_t sum_long_running(intptr_t a, intptr_t b);
+#endif  // NATIVE_IMAGE_CONVERTER_H_

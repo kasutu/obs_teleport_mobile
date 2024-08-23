@@ -1,4 +1,3 @@
-
 import 'dart:async';
 import 'dart:ffi';
 import 'dart:io';
@@ -6,29 +5,21 @@ import 'dart:isolate';
 
 import 'native_image_converter_bindings_generated.dart';
 
-/// A very short-lived native function.
+/// Convert YUV420 to RGBA using the native function.
 ///
-/// For very short-lived functions, it is fine to call them on the main isolate.
-/// They will block the Dart execution while running the native function, so
-/// only do this for native functions which are guaranteed to be short-lived.
-int sum(int a, int b) => _bindings.sum(a, b);
-
-/// A longer lived native function, which occupies the thread calling it.
-///
-/// Do not call these kind of native functions in the main isolate. They will
-/// block Dart execution. This will cause dropped frames in Flutter applications.
-/// Instead, call these native functions on a separate isolate.
-///
-/// Modify this to suit your own use case. Example use cases:
-///
-/// 1. Reuse a single isolate for various different kinds of requests.
-/// 2. Use multiple helper isolates for parallel execution.
-Future<int> sumAsync(int a, int b) async {
+/// This function is designed to be called on a separate isolate to avoid
+/// blocking the main isolate and causing dropped frames in Flutter applications.
+Future<void> convertYuv420ToRgbaAsync(
+  Pointer<Uint8> yuvData,
+  Pointer<Uint8> rgbaData,
+  int width,
+  int height,
+) async {
   final SendPort helperIsolateSendPort = await _helperIsolateSendPort;
-  final int requestId = _nextSumRequestId++;
-  final _SumRequest request = _SumRequest(requestId, a, b);
-  final Completer<int> completer = Completer<int>();
-  _sumRequests[requestId] = completer;
+  final _Yuv420ToRgbaRequest request =
+      _Yuv420ToRgbaRequest(yuvData, rgbaData, width, height);
+  final Completer<void> completer = Completer<void>();
+  _conversionRequests[request.id] = completer;
   helperIsolateSendPort.send(request);
   return completer.future;
 }
@@ -50,35 +41,28 @@ final DynamicLibrary _dylib = () {
 }();
 
 /// The bindings to the native functions in [_dylib].
-final NativeImageConverterBindings _bindings = NativeImageConverterBindings(_dylib);
+final NativeImageConverterBindings _bindings =
+    NativeImageConverterBindings(_dylib);
 
-
-/// A request to compute `sum`.
-///
-/// Typically sent from one isolate to another.
-class _SumRequest {
+/// A request to perform YUV420 to RGBA conversion.
+class _Yuv420ToRgbaRequest {
+  static int _nextId = 0;
   final int id;
-  final int a;
-  final int b;
+  final Pointer<Uint8> yuvData;
+  final Pointer<Uint8> rgbaData;
+  final int width;
+  final int height;
 
-  const _SumRequest(this.id, this.a, this.b);
+  _Yuv420ToRgbaRequest(
+    this.yuvData,
+    this.rgbaData,
+    this.width,
+    this.height,
+  ) : id = _nextId++;
 }
 
-/// A response with the result of `sum`.
-///
-/// Typically sent from one isolate to another.
-class _SumResponse {
-  final int id;
-  final int result;
-
-  const _SumResponse(this.id, this.result);
-}
-
-/// Counter to identify [_SumRequest]s and [_SumResponse]s.
-int _nextSumRequestId = 0;
-
-/// Mapping from [_SumRequest] `id`s to the completers corresponding to the correct future of the pending request.
-final Map<int, Completer<int>> _sumRequests = <int, Completer<int>>{};
+/// Mapping from request `id`s to the completers corresponding to the correct future of the pending request.
+final Map<int, Completer<void>> _conversionRequests = <int, Completer<void>>{};
 
 /// The SendPort belonging to the helper isolate.
 Future<SendPort> _helperIsolateSendPort = () async {
@@ -93,15 +77,14 @@ Future<SendPort> _helperIsolateSendPort = () async {
   final ReceivePort receivePort = ReceivePort()
     ..listen((dynamic data) {
       if (data is SendPort) {
-        // The helper isolate sent us the port on which we can sent it requests.
+        // The helper isolate sent us the port on which we can send it requests.
         completer.complete(data);
         return;
       }
-      if (data is _SumResponse) {
-        // The helper isolate sent us a response to a request we sent.
-        final Completer<int> completer = _sumRequests[data.id]!;
-        _sumRequests.remove(data.id);
-        completer.complete(data.result);
+      if (data is int) {
+        // The helper isolate sent us a response indicating that the conversion is complete.
+        final Completer<void> completer = _conversionRequests.remove(data)!;
+        completer.complete();
         return;
       }
       throw UnsupportedError('Unsupported message type: ${data.runtimeType}');
@@ -112,10 +95,15 @@ Future<SendPort> _helperIsolateSendPort = () async {
     final ReceivePort helperReceivePort = ReceivePort()
       ..listen((dynamic data) {
         // On the helper isolate listen to requests and respond to them.
-        if (data is _SumRequest) {
-          final int result = _bindings.sum_long_running(data.a, data.b);
-          final _SumResponse response = _SumResponse(data.id, result);
-          sendPort.send(response);
+        if (data is _Yuv420ToRgbaRequest) {
+          _bindings.yuv420_to_rgba(
+            data.yuvData,
+            data.rgbaData,
+            data.width,
+            data.height,
+          );
+          sendPort.send(
+              data.id); // Send the request ID back to indicate completion.
           return;
         }
         throw UnsupportedError('Unsupported message type: ${data.runtimeType}');

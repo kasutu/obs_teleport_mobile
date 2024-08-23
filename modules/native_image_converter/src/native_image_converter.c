@@ -1,23 +1,39 @@
 #include "native_image_converter.h"
+#include <stdint.h>
 
-// A very short-lived native function.
-//
-// For very short-lived functions, it is fine to call them on the main isolate.
-// They will block the Dart execution while running the native function, so
-// only do this for native functions which are guaranteed to be short-lived.
-FFI_PLUGIN_EXPORT intptr_t sum(intptr_t a, intptr_t b) { return a + b; }
+// Clamps the value to the 0-255 range
+static inline uint8_t clamp(int32_t value) {
+    if (value < 0) return 0;
+    if (value > 255) return 255;
+    return (uint8_t)value;
+}
 
-// A longer-lived native function, which occupies the thread calling it.
-//
-// Do not call these kind of native functions in the main isolate. They will
-// block Dart execution. This will cause dropped frames in Flutter applications.
-// Instead, call these native functions on a separate isolate.
-FFI_PLUGIN_EXPORT intptr_t sum_long_running(intptr_t a, intptr_t b) {
-  // Simulate work.
-#if _WIN32
-  Sleep(5000);
-#else
-  usleep(5000 * 1000);
-#endif
-  return a + b;
+// A native function for YUV420 to RGBA conversion
+FFI_PLUGIN_EXPORT void yuv420_to_rgba(uint8_t* yuvData, uint8_t* rgbaData, int width, int height) {
+    int frameSize = width * height;
+    int uIndex = frameSize;
+    int vIndex = frameSize + (frameSize / 4);
+    
+    int yIndex = 0;
+    int rgbaIndex = 0;
+
+    for (int j = 0; j < height; j++) {
+        for (int i = 0; i < width; i++) {
+            int y = yuvData[yIndex] & 0xff;
+            int u = yuvData[uIndex + (j / 2) * (width / 2) + (i / 2)] & 0xff;
+            int v = yuvData[vIndex + (j / 2) * (width / 2) + (i / 2)] & 0xff;
+
+            int r = y + (1.370705 * (v - 128));
+            int g = y - (0.337633 * (u - 128)) - (0.698001 * (v - 128));
+            int b = y + (1.732446 * (u - 128));
+
+            rgbaData[rgbaIndex]     = clamp(r);
+            rgbaData[rgbaIndex + 1] = clamp(g);
+            rgbaData[rgbaIndex + 2] = clamp(b);
+            rgbaData[rgbaIndex + 3] = 255; // Alpha channel
+            
+            yIndex++;
+            rgbaIndex += 4;
+        }
+    }
 }

@@ -27,44 +27,39 @@ class NativeImageConverterBindings {
           lookup)
       : _lookup = lookup;
 
-  /// A very short-lived native function.
+  /// Function to convert YUV420 data to RGBA.
   ///
-  /// For very short-lived functions, it is fine to call them on the main isolate.
-  /// They will block the Dart execution while running the native function, so
-  /// only do this for native functions which are guaranteed to be short-lived.
-  int sum(
-    int a,
-    int b,
+  /// This function converts YUV420 formatted image data to RGBA format.
+  /// It takes pointers to the YUV420 data and an allocated RGBA buffer,
+  /// along with the image width and height.
+  void yuv420_to_rgba(
+    ffi.Pointer<ffi.Uint8> yuvData,
+    ffi.Pointer<ffi.Uint8> rgbaData,
+    int width,
+    int height,
   ) {
-    return _sum(
-      a,
-      b,
+    return _yuv420_to_rgba(
+      yuvData,
+      rgbaData,
+      width,
+      height,
     );
   }
 
-  late final _sumPtr =
-      _lookup<ffi.NativeFunction<ffi.IntPtr Function(ffi.IntPtr, ffi.IntPtr)>>(
-          'sum');
-  late final _sum = _sumPtr.asFunction<int Function(int, int)>();
+  late final _yuv420_to_rgbaPtr = _lookup<
+      ffi.NativeFunction<
+          ffi.Void Function(
+            ffi.Pointer<ffi.Uint8>,
+            ffi.Pointer<ffi.Uint8>,
+            ffi.Int,
+            ffi.Int,
+          )>>('yuv420_to_rgba');
 
-  /// A longer lived native function, which occupies the thread calling it.
-  ///
-  /// Do not call these kind of native functions in the main isolate. They will
-  /// block Dart execution. This will cause dropped frames in Flutter applications.
-  /// Instead, call these native functions on a separate isolate.
-  int sum_long_running(
-    int a,
-    int b,
-  ) {
-    return _sum_long_running(
-      a,
-      b,
-    );
-  }
-
-  late final _sum_long_runningPtr =
-      _lookup<ffi.NativeFunction<ffi.IntPtr Function(ffi.IntPtr, ffi.IntPtr)>>(
-          'sum_long_running');
-  late final _sum_long_running =
-      _sum_long_runningPtr.asFunction<int Function(int, int)>();
+  late final _yuv420_to_rgba = _yuv420_to_rgbaPtr.asFunction<
+      void Function(
+        ffi.Pointer<ffi.Uint8>,
+        ffi.Pointer<ffi.Uint8>,
+        int,
+        int,
+      )>();
 }

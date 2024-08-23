@@ -68,9 +68,6 @@ class _MonitorScreenState extends State<MonitorScreen> {
       // Convert the JPEG to a Uint8List
       // TeleportImage? teleportImage = await yuvToRgb(image);
 
-      // Display the Uint8List
-      Logger.info('[TRANSMITTING]');
-
       // print('[IMAGE DATA] ${image.format.group.name}');
     });
 
