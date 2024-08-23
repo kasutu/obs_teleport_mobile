@@ -21,7 +21,7 @@ class _CameraPreviewMonitorState extends State<CameraPreviewMonitor>
   @override
   void initState() {
     super.initState();
-    WidgetsBinding.instance?.addObserver(this);
+    WidgetsBinding.instance.addObserver(this);
     _initializeCameraController(widget.camera);
   }
 

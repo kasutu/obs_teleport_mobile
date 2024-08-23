@@ -3,5 +3,7 @@
     "Datagram",
     "googlecast",
     "Mdns"
-  ]
+  ],
+  "java.configuration.updateBuildConfiguration": "interactive",
+  "C_Cpp.errorSquiggles": "disabled"
 }

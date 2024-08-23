@@ -5,6 +5,7 @@
 import 'package:camera/camera.dart';
 import 'package:flutter/material.dart';
 import 'package:obs_teleport_mobile/obs_teleport/announce_teleport_peer.dart';
+import 'package:obs_teleport_mobile/screens/logger_screen.dart';
 import 'package:obs_teleport_mobile/screens/sources_screen.dart';
 import 'package:obs_teleport_mobile/screens/settings_screen.dart';
 import 'package:obs_teleport_mobile/screens/monitor_screen.dart';
@@ -92,7 +93,8 @@ class _MyHomePageState extends State<MyHomePage> {
       children: const <Widget>[
         MonitorScreen(),
         SourcesScreen(),
-        SettingsScreen()
+        SettingsScreen(),
+        LoggerScreen()
       ],
     );
   }
@@ -111,6 +113,10 @@ class _MyHomePageState extends State<MyHomePage> {
         BottomNavigationBarItem(
           icon: Icon(Icons.settings),
           label: 'Settings',
+        ),
+        BottomNavigationBarItem(
+          icon: Icon(Icons.terminal),
+          label: 'Logs',
         ),
       ],
       currentIndex: _selectedIndex,
