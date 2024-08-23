@@ -1,73 +1,12 @@
-import 'dart:typed_data';
-import 'dart:isolate';
+import 'dart:ffi';
 import 'package:camera/camera.dart';
+import 'package:ffi/ffi.dart';
 import 'package:image/image.dart' as image_lib;
+import 'package:native_image_converter/native_image_converter.dart';
 
 class CameraImageConverter {
-  static Future<Uint8List> convertInIsolate(
-      Uint8List yuvData, int width, int height) async {
-    final responsePort = ReceivePort();
-    await Isolate.spawn(
-        _isolateEntry, [responsePort.sendPort, yuvData, width, height]);
-    return await responsePort.first as Uint8List;
-  }
-
-  static void _isolateEntry(List<dynamic> args) {
-    final SendPort sendPort = args[0];
-    final Uint8List yuvData = args[1];
-    final int width = args[2];
-    final int height = args[3];
-
-    final rgbaData = _convertYuv420ToRgba8888(yuvData, width, height);
-    sendPort.send(rgbaData);
-  }
-
-  static Uint8List _convertYuv420ToRgba8888(
-      Uint8List yuvData, int width, int height) {
-    final int frameSize = width * height;
-    final Uint8List rgbaData = Uint8List(width * height * 4);
-
-    int yIndex = 0;
-    int uIndex = frameSize;
-    int vIndex = frameSize + (frameSize ~/ 4);
-
-    for (int j = 0; j < height; j++) {
-      for (int i = 0; i < width; i++) {
-        final y = yuvData[yIndex++] & 0xff;
-        final u = yuvData[uIndex + (j >> 1) * (width >> 1) + (i >> 1)] & 0xff;
-        final v = yuvData[vIndex + (j >> 1) * (width >> 1) + (i >> 1)] & 0xff;
-
-        final r = _clamp(y + (1.370705 * (v - 128)));
-        final g = _clamp(y - (0.337633 * (u - 128)) - (0.698001 * (v - 128)));
-        final b = _clamp(y + (1.732446 * (u - 128)));
-
-        final rgbaIndex = (j * width + i) * 4;
-        rgbaData[rgbaIndex] = r;
-        rgbaData[rgbaIndex + 1] = g;
-        rgbaData[rgbaIndex + 2] = b;
-        rgbaData[rgbaIndex + 3] = 255;
-      }
-    }
-
-    return rgbaData;
-  }
-
-  static int _clamp(double value) {
-    return value.clamp(0, 255).toInt();
-  }
-
-  /// Converts a [CameraImage] in YUV420 format to [imageLib.Image] in RGB format
-  static image_lib.Image? convertCameraImage(CameraImage cameraImage) {
-    if (cameraImage.format.group == ImageFormatGroup.yuv420) {
-      return _convertYUV420ToImage(cameraImage);
-    } else if (cameraImage.format.group == ImageFormatGroup.bgra8888) {
-      return _convertBGRA8888ToImage(cameraImage);
-    } else {
-      return null;
-    }
-  }
-
-  static image_lib.Image _convertBGRA8888ToImage(CameraImage image) {
+  /// Converts a [CameraImage] in BGRA8888 format to [image_lib.Image] in RGB format
+  static image_lib.Image convertBGRA8888ToImage(CameraImage image) {
     return image_lib.Image.fromBytes(
       width: image.width,
       height: image.height,
@@ -76,12 +15,37 @@ class CameraImageConverter {
     );
   }
 
-  static image_lib.Image _convertYUV420ToImage(CameraImage image) {
-    return image_lib.Image.fromBytes(
-      width: image.width,
-      height: image.height,
-      bytes: image.planes[0].bytes.buffer,
-      order: image_lib.ChannelOrder.rgb,
+  /// Converts a [CameraImage] in YUV420 format to [image_lib.Image] in RGB format
+  static Future<image_lib.Image> convertYUV420ToImage(CameraImage image) async {
+    final int width = image.width;
+    final int height = image.height;
+
+    // Allocate memory for the YUV and RGBA data.
+    final Pointer<Uint8> yuvPointer =
+        malloc.allocate<Uint8>(image.planes[0].bytes.length);
+    final Pointer<Uint8> rgbaPointer =
+        malloc.allocate<Uint8>(width * height * 4);
+
+    // Copy the YUV data into the allocated memory.
+    yuvPointer
+        .asTypedList(image.planes[0].bytes.length)
+        .setAll(0, image.planes[0].bytes);
+
+    // Perform the conversion using the native function.
+    await convertYuv420ToRgbaAsync(yuvPointer, rgbaPointer, width, height);
+
+    // Create an Image from the RGBA data.
+    final image_lib.Image convertedImage = image_lib.Image.fromBytes(
+      width: width,
+      height: height,
+      bytes: rgbaPointer.asTypedList(width * height * 4).buffer,
+      order: image_lib.ChannelOrder.rgba,
     );
+
+    // Free the allocated memory.
+    malloc.free(yuvPointer);
+    malloc.free(rgbaPointer);
+
+    return convertedImage;
   }
 }

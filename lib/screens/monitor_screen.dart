@@ -6,7 +6,6 @@ import 'package:camera/camera.dart';
 import 'package:flutter/material.dart';
 // import 'package:obs_teleport_mobile/camera/video_converter.dart';
 import 'package:obs_teleport_mobile/main.dart';
-import 'package:obs_teleport_mobile/utils/logger.dart';
 
 /// CameraApp is the Main Application.
 class MonitorScreen extends StatefulWidget {

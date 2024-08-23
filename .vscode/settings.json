@@ -2,6 +2,7 @@
   "cSpell.words": [
     "Datagram",
     "googlecast",
+    "malloc",
     "Mdns"
   ],
   "java.configuration.updateBuildConfiguration": "interactive",
