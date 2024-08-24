@@ -49,7 +49,7 @@ class _LoggerScreenState extends State<LoggerScreen> {
             curve: Curves.easeOut,
           );
         } catch (e) {
-          print('Error: $e');
+          Logger.error('Error: $e');
           _controller.animateTo(
             0.0,
             duration: const Duration(milliseconds: 150),

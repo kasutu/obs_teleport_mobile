@@ -1,21 +1,28 @@
-// File: lib/main.dart
-
 // ignore_for_file: library_private_types_in_public_api
 
 import 'package:camera/camera.dart';
 import 'package:flutter/material.dart';
+import 'package:obs_teleport_mobile/models/settings_model.dart';
 import 'package:obs_teleport_mobile/obs_teleport/announce_teleport_peer.dart';
 import 'package:obs_teleport_mobile/screens/logger_screen.dart';
 import 'package:obs_teleport_mobile/screens/sources_screen.dart';
 import 'package:obs_teleport_mobile/screens/settings_screen.dart';
 import 'package:obs_teleport_mobile/screens/monitor_screen.dart';
+import 'package:provider/provider.dart';
 
 late List<CameraDescription> builtInCameras;
+final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   builtInCameras = await availableCameras();
-  runApp(const MyApp());
+
+  runApp(
+    ChangeNotifierProvider(
+      create: (_) => SettingsModel(),
+      child: const MyApp(),
+    ),
+  );
 }
 
 class MyApp extends StatelessWidget {
@@ -24,22 +31,18 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      theme: _buildThemeData(),
-      home: const MyHomePage(),
-    );
-  }
-
-  ThemeData _buildThemeData() {
-    return ThemeData(
-      brightness: Brightness.dark,
-      primarySwatch: Colors.blueGrey,
-      hintColor: Colors.blueAccent,
-      fontFamily: 'Roboto',
-      textButtonTheme: TextButtonThemeData(
-        style: TextButton.styleFrom(
-          foregroundColor: Colors.white,
+      theme: ThemeData(
+        brightness: Brightness.dark,
+        primarySwatch: Colors.blueGrey,
+        hintColor: Colors.blueAccent,
+        fontFamily: 'Roboto',
+        textButtonTheme: TextButtonThemeData(
+          style: TextButton.styleFrom(
+            foregroundColor: Colors.white,
+          ),
         ),
       ),
+      home: const MyHomePage(),
     );
   }
 }
@@ -53,126 +56,143 @@ class MyHomePage extends StatefulWidget {
 
 class _MyHomePageState extends State<MyHomePage> {
   int _selectedIndex = 0;
-  final PageController _pageController = PageController();
   late AnnounceTeleportPeer announcer;
-  bool isBroadcasting = false; // Move the isBroadcasting variable here
-
-  void _initAnnouncer() {
-    announcer = AnnounceTeleportPeer(name: 'OBS teleport mobile', quality: 90);
-  }
 
   @override
   void initState() {
     super.initState();
-    _initAnnouncer();
+    final settings = Provider.of<SettingsModel>(context, listen: false);
+
+    // Initialize the announcer with settings
+    announcer = AnnounceTeleportPeer(
+      name: settings.announceTeleportPeerName,
+      port: settings.announceTeleportPeerPort,
+      quality: settings.announceTeleportPeerQuality,
+    );
+
+    // Start announcer if isTeleporting is true on init
+    if (settings.isTeleporting) {
+      announcer.startAnnouncer();
+    }
+
+    // Listen for changes in settings
+    settings.addListener(_onSettingsChanged);
+  }
+
+  void _onSettingsChanged() {
+    final settings = Provider.of<SettingsModel>(context, listen: false);
+
+    // Update the announcer with new settings if necessary
+    bool shouldReinitialize = false;
+
+    if (announcer.name != settings.announceTeleportPeerName) {
+      shouldReinitialize = true;
+    }
+    if (announcer.port != settings.announceTeleportPeerPort) {
+      shouldReinitialize = true;
+    }
+    if (announcer.quality != settings.announceTeleportPeerQuality) {
+      shouldReinitialize = true;
+    }
+
+    if (shouldReinitialize) {
+      // Stop the current announcer
+      if (announcer.isAnnouncing) {
+        announcer.stopAnnouncer();
+      }
+
+      // Reinitialize the announcer with updated settings
+      announcer = AnnounceTeleportPeer(
+        name: settings.announceTeleportPeerName,
+        port: settings.announceTeleportPeerPort,
+        quality: settings.announceTeleportPeerQuality,
+      );
+
+      // Start the announcer if isTeleporting is true
+      if (settings.isTeleporting) {
+        announcer.startAnnouncer();
+      }
+    } else {
+      // Only start/stop announcer if there's an actual change in teleporting state
+      if (settings.isTeleporting && !announcer.isAnnouncing) {
+        announcer.startAnnouncer();
+      } else if (!settings.isTeleporting && announcer.isAnnouncing) {
+        announcer.stopAnnouncer();
+      }
+    }
+  }
+
+  @override
+  void dispose() {
+    // Stop the announcer when the widget is disposed
+    if (announcer.isAnnouncing) {
+      announcer.stopAnnouncer();
+    }
+
+    // Remove listener
+    final settings = Provider.of<SettingsModel>(context, listen: false);
+    settings.removeListener(_onSettingsChanged);
+    super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
+    final settings = Provider.of<SettingsModel>(context, listen: true);
+
     return Scaffold(
       appBar: AppBar(
-        title: Text(
-          'OBS Teleport',
-          style: Theme.of(context).textTheme.titleLarge!.copyWith(
-                color: Theme.of(context).colorScheme.primary,
-              ),
-        ),
-        actions: [_buildHeaderSwitch(context)],
+        title: const Text('OBS Teleport'),
+        actions: [
+          Switch(
+            value: settings.isTeleporting,
+            onChanged: (newValue) {
+              settings.isTeleporting = newValue;
+            },
+          ),
+        ],
       ),
-      body: _buildPageView(),
+      body: IndexedStack(
+        index: _selectedIndex,
+        children: const <Widget>[
+          MonitorScreen(),
+          SettingsScreen(),
+          SourcesScreen(),
+          LoggerScreen(),
+        ],
+      ),
       bottomNavigationBar: _buildBottomNavigationBar(),
     );
   }
 
-  PageView _buildPageView() {
-    return PageView(
-      controller: _pageController,
-      onPageChanged: (index) {
-        setState(() => _selectedIndex = index);
-      },
-      children: const <Widget>[
-        MonitorScreen(),
-        SourcesScreen(),
-        SettingsScreen(),
-        LoggerScreen()
-      ],
-    );
-  }
-
-  BottomNavigationBar _buildBottomNavigationBar() {
+  Widget _buildBottomNavigationBar() {
     return BottomNavigationBar(
-      items: const <BottomNavigationBarItem>[
+      showUnselectedLabels: true,
+      unselectedItemColor: Theme.of(context).colorScheme.tertiary,
+      selectedItemColor: Theme.of(context).colorScheme.primary,
+      currentIndex: _selectedIndex,
+      onTap: (index) {
+        setState(() {
+          _selectedIndex = index;
+        });
+      },
+      items: const [
         BottomNavigationBarItem(
-          icon: Icon(
-            Icons.monitor,
-            color: Colors.white70,
-          ),
-          label: 'Monitor',
+          icon: Icon(Icons.home),
+          label: 'Home',
         ),
         BottomNavigationBarItem(
-          icon: Icon(
-            Icons.input,
-            color: Colors.white70,
-          ),
-          label: 'Sources',
-        ),
-        BottomNavigationBarItem(
-          icon: Icon(
-            Icons.settings,
-            color: Colors.white70,
-          ),
+          icon: Icon(Icons.settings),
           label: 'Settings',
         ),
         BottomNavigationBarItem(
-          icon: Icon(
-            Icons.terminal,
-            color: Colors.white70,
-          ),
-          label: 'Logs',
+          icon: Icon(Icons.settings_input_svideo),
+          label: 'Sources',
+        ),
+        BottomNavigationBarItem(
+          icon: Icon(Icons.terminal),
+          label: 'Logger',
         ),
       ],
-      currentIndex: _selectedIndex,
-      selectedItemColor: Theme.of(context).colorScheme.secondary,
-      onTap: _onItemTapped,
     );
-  }
-
-  void _onItemTapped(int index) {
-    _pageController.jumpToPage(index);
-  }
-
-  Widget _buildHeaderSwitch(BuildContext context) {
-    final MaterialStateProperty<Icon?> thumbIcon =
-        MaterialStateProperty.resolveWith<Icon?>(
-      (Set<MaterialState> states) {
-        if (states.contains(MaterialState.selected)) {
-          return const Icon(Icons.play_arrow); // Icon for broadcasting state
-        }
-        return const Icon(Icons.stop); // Icon for stopped state
-      },
-    );
-
-    return Switch(
-      thumbIcon: thumbIcon,
-      value: isBroadcasting,
-      onChanged: (bool value) {
-        setState(() {
-          isBroadcasting = value;
-          if (isBroadcasting) {
-            _startAnnouncer();
-          } else {
-            _stopAnnouncer();
-          }
-        });
-      },
-    );
-  }
-
-  Future<void> _startAnnouncer() async {
-    await announcer.startAnnouncer();
-  }
-
-  Future<void> _stopAnnouncer() async {
-    await announcer.stopAnnouncer();
   }
 }

@@ -3,7 +3,9 @@
     "Datagram",
     "googlecast",
     "malloc",
-    "Mdns"
+    "Mdns",
+    "svideo",
+    "Teleporting"
   ],
   "java.configuration.updateBuildConfiguration": "interactive",
   "C_Cpp.errorSquiggles": "disabled"

@@ -99,3 +99,15 @@ class WaveHeader {
         'Frames': frames,
       };
 }
+
+class AudioOutputInfo {
+  int format;
+  int samplesPerSecond;
+  int speakerCount;
+
+  AudioOutputInfo({
+    required this.format,
+    required this.samplesPerSecond,
+    required this.speakerCount,
+  });
+}

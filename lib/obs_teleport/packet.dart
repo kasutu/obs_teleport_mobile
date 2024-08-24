@@ -56,15 +56,3 @@ class Packet {
     buffer = Uint8List.fromList(utf8.encode('WAVE data'));
   }
 }
-
-class AudioOutputInfo {
-  int format;
-  int samplesPerSecond;
-  int speakerCount;
-
-  AudioOutputInfo({
-    required this.format,
-    required this.samplesPerSecond,
-    required this.speakerCount,
-  });
-}

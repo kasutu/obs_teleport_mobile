@@ -1,15 +1,11 @@
-// File: monitor_screen.dart
-
-// ignore_for_file: avoid_print
-
 import 'package:camera/camera.dart';
 import 'package:flutter/material.dart';
-// import 'package:obs_teleport_mobile/camera/video_converter.dart';
-import 'package:obs_teleport_mobile/main.dart';
+import 'package:obs_teleport_mobile/utils/logger.dart';
+import 'package:provider/provider.dart';
+import 'package:obs_teleport_mobile/models/settings_model.dart';
+import 'package:obs_teleport_mobile/services/camera_service.dart';
 
-/// CameraApp is the Main Application.
 class MonitorScreen extends StatefulWidget {
-  /// Default Constructor
   const MonitorScreen({super.key});
 
   @override
@@ -17,64 +13,83 @@ class MonitorScreen extends StatefulWidget {
 }
 
 class _MonitorScreenState extends State<MonitorScreen> {
-  late CameraController controller;
+  bool? _wasTeleporting; // To track the previous state
 
   @override
   void initState() {
     super.initState();
-    controller = CameraController(
-      builtInCameras[0],
-      ResolutionPreset.low,
-      enableAudio: true,
-      imageFormatGroup: ImageFormatGroup.yuv420,
-    );
-
-    controller.initialize().then((_) {
-      if (!mounted) {
-        return;
-      }
-
-      setState(() {});
-    }).catchError((Object e) {
-      if (e is CameraException) {
-        switch (e.code) {
-          case 'CameraAccessDenied':
-            // Handle access errors here.
-            break;
-          default:
-            // Handle other errors here.
-            break;
-        }
-      }
-    });
+    _initializeCamera();
   }
 
-  @override
-  void dispose() {
-    controller.dispose();
-    super.dispose();
+  Future<void> _initializeCamera() async {
+    try {
+      await CameraService.instance.initializeController();
+      setState(() {});
+    } catch (e) {
+      Logger.error('Camera initialization error: ${e.toString()}');
+    }
   }
 
   @override
   Widget build(BuildContext context) {
-    if (!controller.value.isInitialized) {
-      return Container();
+    final settings = Provider.of<SettingsModel>(context, listen: true);
+
+    // Check if the camera is not initialized
+    if (!CameraService.instance.value.isInitialized) {
+      return Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            const Text('Camera is not initialized'),
+            const SizedBox(height: 20),
+            ElevatedButton(
+              onPressed: _initializeCamera,
+              child: const Text('Initialize Camera'),
+            ),
+          ],
+        ),
+      );
     }
 
-    controller.prepareForVideoRecording();
+    // Set camera settings based on the current settings model
+    CameraService.instance.setInstanceSettings(
+      const CameraDescription(
+        name: 'Main Cam',
+        lensDirection: CameraLensDirection.back,
+        sensorOrientation: 0,
+      ),
+      settings.cameraResolutionPreset,
+      settings.cameraEnableAudio,
+    );
 
-    controller.startImageStream((CameraImage image) async {
-      // Convert the JPEG to a Uint8List
-      // TeleportImage? teleportImage = await yuvToRgb(image);
+    // Compare the previous state with the current state
+    if (_wasTeleporting != settings.isTeleporting) {
+      if (settings.isTeleporting) {
+        Logger.info('Starting image stream');
+        CameraService.instance.startImageStreamWithLogging();
+      } else {
+        Logger.info('Stopping image stream');
+        CameraService.instance.stopImageStreamSafely();
+      }
 
-      // print('[IMAGE DATA] ${image.format.group.name}');
-    });
+      // Update the previous state
+      _wasTeleporting = settings.isTeleporting;
+    }
 
     return Scaffold(
       body: SafeArea(
-        child: Column(
+        child: Stack(
           children: [
-            Expanded(child: CameraPreview(controller)),
+            Column(
+              children: [
+                Expanded(
+                  child: AspectRatio(
+                    aspectRatio: CameraService.instance.value.aspectRatio,
+                    child: CameraPreview(CameraService.instance),
+                  ),
+                ),
+              ],
+            ),
           ],
         ),
       ),

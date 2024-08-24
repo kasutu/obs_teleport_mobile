@@ -4,7 +4,6 @@
 
 import 'package:flutter/material.dart';
 import 'package:camera/camera.dart';
-import 'package:obs_teleport_mobile/main.dart';
 import 'package:obs_teleport_mobile/widgets/device_dropdown.dart';
 
 class SourcesScreen extends StatefulWidget {
@@ -32,7 +31,8 @@ class _SourcesScreenState extends State<SourcesScreen> {
   }
 
   Future<void> loadCameras() async {
-    cameras = builtInCameras;
+    cameras =
+        await availableCameras(); // Use availableCameras() to get the list of cameras
     if (cameras.isNotEmpty) {
       selectedCamera = cameras.first;
     }

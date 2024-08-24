@@ -9,9 +9,12 @@ class AnnounceTeleportPeer {
   final Random _random = Random();
   String? name;
   int port = 0;
-  int quality;
+  double quality;
+  bool isAnnouncing = false; // New property to track the state of the announcer
 
   AnnounceTeleportPeer({this.name, this.port = 0, required this.quality}) {
+    Logger.info(
+        'AnnounceTeleportPeer created with name: $name, port: $port, quality: $quality');
     _setAnnouncer();
   }
 
@@ -23,6 +26,8 @@ class AnnounceTeleportPeer {
     }
 
     String finalName = (name == null || name!.isEmpty) ? _getHostName() : name!;
+    Logger.info(
+        'Setting announcer with name: $finalName, port: $port, quality: $quality');
 
     announcer = Announcer(
       payload: ObsTeleportPeer(
@@ -35,17 +40,30 @@ class AnnounceTeleportPeer {
   }
 
   String _getHostName() {
-    return Platform.localHostname;
+    String hostName = Platform.localHostname;
+    Logger.info('Host name: $hostName');
+    return hostName;
   }
 
   int _randomPort() {
-    return _random.nextInt(65535) + 1; // Random port between 1 and 65535
+    int randomPort =
+        _random.nextInt(65535) + 1; // Random port between 1 and 65535
+    Logger.info('Generated random port: $randomPort');
+    return randomPort;
   }
 
   Future<void> startAnnouncer() async {
+    if (isAnnouncing) {
+      Logger.info('Announcer is already running on port: $port');
+      return;
+    }
+
     while (true) {
       try {
+        Logger.info('Starting announcer on port: $port');
         await announcer.startAnnouncer();
+        isAnnouncing = true; // Set the flag to true when announcer starts
+        Logger.info('Announcer started successfully on port: $port');
         break; // If startAnnouncer succeeds, break the loop
       } catch (e) {
         Logger.error(
@@ -57,6 +75,14 @@ class AnnounceTeleportPeer {
   }
 
   Future<void> stopAnnouncer() async {
+    if (!isAnnouncing) {
+      Logger.info('Announcer is not running, nothing to stop.');
+      return;
+    }
+
+    Logger.info('Stopping announcer on port: $port');
     await announcer.stopAnnouncer();
+    isAnnouncing = false; // Set the flag to false when announcer stops
+    Logger.info('Announcer stopped successfully');
   }
 }
