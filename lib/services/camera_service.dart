@@ -1,6 +1,7 @@
 import 'package:camera/camera.dart';
-import 'package:obs_teleport_mobile/interop/camera_image_converter.dart';
 import 'package:obs_teleport_mobile/utils/logger.dart';
+
+import 'package:media_processors/media_processors.dart' as media_processors;
 
 class CameraService extends CameraController {
   static final CameraService _instance = CameraService._internal();
@@ -57,14 +58,14 @@ class CameraService extends CameraController {
 
   // Start the image stream with logging
   void startImageStreamWithLogging() {
-    startImageStream((CameraImage image) {
+    startImageStream((CameraImage image) async {
       Logger.info('[IMAGE DATA] ${image.format.group.name}');
 
-      // CameraImageConverter.convertYUV420ToJPEG(image).then((image) {
-      //   Logger.info('Image converted successfully');
-      // }).catchError((e) {
-      //   Logger.error('Error converting image: $e');
-      // });
+      // Example usage of media_processors functions
+      int resultSum = media_processors.sum(5, 3);
+      int resultSubtract = await media_processors.subtractAsync(5, 3);
+      Logger.info('Sum result: $resultSum');
+      Logger.info('Subtract result: $resultSubtract');
     });
   }
 
