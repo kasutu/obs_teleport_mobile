@@ -1,4 +1,5 @@
 import 'package:camera/camera.dart';
+import 'package:obs_teleport_mobile/interop/camera_image_converter.dart';
 import 'package:obs_teleport_mobile/utils/logger.dart';
 
 class CameraService extends CameraController {
@@ -58,7 +59,12 @@ class CameraService extends CameraController {
   void startImageStreamWithLogging() {
     startImageStream((CameraImage image) {
       Logger.info('[IMAGE DATA] ${image.format.group.name}');
-      // Add conversion logic here
+
+      // CameraImageConverter.convertYUV420ToJPEG(image).then((image) {
+      //   Logger.info('Image converted successfully');
+      // }).catchError((e) {
+      //   Logger.error('Error converting image: $e');
+      // });
     });
   }
 

@@ -5,7 +5,8 @@
     "malloc",
     "Mdns",
     "svideo",
-    "Teleporting"
+    "Teleporting",
+    "writeln"
   ],
   "java.configuration.updateBuildConfiguration": "interactive",
   "C_Cpp.errorSquiggles": "disabled"

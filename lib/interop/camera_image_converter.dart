@@ -16,7 +16,7 @@ class CameraImageConverter {
   }
 
   /// Converts a [CameraImage] in YUV420 format to [image_lib.Image] in RGB format
-  static Future<image_lib.Image> convertYUV420ToImage(CameraImage image) async {
+  static Future<image_lib.Image> convertYUV420ToJPEG(CameraImage image) async {
     final int width = image.width;
     final int height = image.height;
 
